@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0 — 2026-10-08
+
+- Added `get_audio`: fetches a sound preview server-side and returns a native MCP audio block with exact provenance and byte length. No extra Freesound key, public media endpoint, or UI.
+- Removed the reusable download helper's old 12 MiB cap. Neither audio path imposes an application file-size cap.
+- Added credential-free client decoding example and tests for binary transport, concurrent tool calls, downloads larger than the former cap, authorization, unsafe responses, cancellation, and errors.
+- Documented asynchronous delivery versus progressive playback and the remaining ChatGPT Intelligent UI verification requirement. Metadata caching is unchanged; audio bytes are not cached.
+
+Upgrade from 2.1.0: retain the same Site, plugin, secret and D1 database. No migrations or new permissions. Refresh the plugin's tool list if `get_audio` is missing. Existing four tools retain their contracts.
+
 ## 2.1.0 — 2026-10-08
 
 - Branded 1200 × 630 Site thumbnail based on the Song Machines robot workshop, with Freesound Connector as the primary identity.

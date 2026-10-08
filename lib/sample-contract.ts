@@ -15,7 +15,7 @@ export const searchSchema = z.object({
 export type SearchInput = z.input<typeof searchSchema>;
 export const mediaUrlSchema = z.string().url().refine(value => {
   const u = new URL(value);
-  return u.protocol === "https:" && ["cdn.freesound.org", "freesound.org"].includes(u.hostname) && !u.username && !u.password && !u.search && !u.hash && /^\/(previews|displays)\//.test(u.pathname);
+  return u.protocol === "https:" && ["cdn.freesound.org", "freesound.org"].includes(u.hostname) && !u.port && !u.username && !u.password && !u.search && !u.hash && /^\/(previews|displays)\//.test(u.pathname);
 });
 const sourceUrlSchema = z.string().url().refine(value => {
   const u = new URL(value); return u.protocol === "https:" && u.hostname === "freesound.org" && /^\/people\/[^/]+\/sounds\/\d+\/$/.test(u.pathname) && !u.search;
@@ -41,7 +41,10 @@ export const previewSchema = z.object({
   license: soundSchema.shape.license, attribution: z.string(), expires_at: z.string().nullable(), delivery: z.literal("direct-cdn"),
 });
 export type Preview = z.infer<typeof previewSchema>;
-export const failureSchema = z.object({ code: z.enum(["cache_unavailable", "unconfigured", "unauthorized", "forbidden", "not_found", "rate_limited", "upstream", "timeout", "invalid_response", "unavailable_preview", "oversized", "invalid_input"]), message: z.string(), status: z.number().int(), retry_after_seconds: z.number().nonnegative().optional() });
+/** Provenance accompanying the native MCP audio block; cache describes metadata only. */
+export const audioDescriptorSchema = previewSchema.extend({ delivery: z.literal("mcp-audio"), byte_length: z.number().int().positive() });
+export type AudioDescriptor = z.infer<typeof audioDescriptorSchema>;
+export const failureSchema = z.object({ code: z.enum(["cache_unavailable", "unconfigured", "unauthorized", "forbidden", "not_found", "rate_limited", "upstream", "timeout", "cancelled", "invalid_response", "unavailable_preview", "oversized", "invalid_input"]), message: z.string(), status: z.number().int(), retry_after_seconds: z.number().nonnegative().optional() });
 export type Failure = z.infer<typeof failureSchema>;
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Failure };
 export const statusSchema = z.object({

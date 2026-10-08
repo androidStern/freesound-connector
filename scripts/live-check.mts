@@ -1,6 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import { createLibraryClient } from "../lib/sample-adapter";
+import { createLibraryClient, readAudioToolResult } from "../lib/sample-adapter";
 import { writeFile, mkdir } from "node:fs/promises";
 const base = process.env.LIBRARY_TEST_URL;
 if (!base) throw new Error("LIBRARY_TEST_URL is required.");
@@ -18,14 +18,16 @@ try {
   const search = await library.search({ query: "open hi hat", max_duration: 4 });
   const sound = await library.metadata(317096);
   const preview = await library.preview(sound.id);
-  const bytes = await library.fetchAudio(preview);
+  const audio = readAudioToolResult(await client.callTool({ name: "get_audio", arguments: { sound_id: sound.id } }));
+  if (!audio.ok) throw new Error(audio.error.message);
+  const bytes = audio.value.audio;
   const broad = await library.search({ query: "forest birds", max_duration: 20, page_size: 2 });
   const repeated = await library.search({ query: "open hi hat", max_duration: 4 });
   if (!repeated.cache?.hit) throw new Error("Repeated search did not hit the persistent cache.");
   if (client.getServerCapabilities()?.resources) throw new Error("Unexpected UI resources.");
   const unauthorized = await fetch(new URL("/mcp", base), { method: "POST", headers: { Accept: "application/json, text/event-stream", "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 7, method: "tools/call", params: { name: "get_preview", arguments: { sound_id: sound.id } } }), redirect: "manual" });
   if (unauthorized.status === 200) throw new Error("Anonymous tool access was not rejected.");
-  const report = { surface: local ? "local workerd" : "deployed Site with authorized MCP OAuth", checked_at: new Date().toISOString(), tools: list.tools.map(t => t.name), status, search_count: search.count, general_search_count: broad.count, sound, preview, preview_bytes: bytes.byteLength, repeated_cache: repeated.cache, unauthorized_status: unauthorized.status };
+  const report = { surface: local ? "local workerd" : "deployed Site with authorized MCP OAuth", checked_at: new Date().toISOString(), tools: list.tools.map(t => t.name), status, search_count: search.count, general_search_count: broad.count, sound, preview, audio_delivery: audio.value.provenance.delivery, preview_bytes: bytes.byteLength, repeated_cache: repeated.cache, unauthorized_status: unauthorized.status };
   await mkdir("outputs", { recursive: true }); await writeFile(local ? "outputs/live-local.json" : "outputs/live-deployed.json", JSON.stringify(report, null, 2));
-  console.log(JSON.stringify({ surface: report.surface, tools: report.tools, status, search_count: search.count, general_search_count: broad.count, sound_id: sound.id, preview_bytes: bytes.byteLength, unauthorized_status: unauthorized.status }));
+  console.log(JSON.stringify({ surface: report.surface, tools: report.tools, status, search_count: search.count, general_search_count: broad.count, sound_id: sound.id, audio_delivery: audio.value.provenance.delivery, preview_bytes: bytes.byteLength, unauthorized_status: unauthorized.status }));
 } finally { await client.close(); }

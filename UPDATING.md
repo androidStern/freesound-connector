@@ -56,15 +56,15 @@ Save and deploy to the **recorded project ID** through the native Sites tools. P
 Through the existing authenticated plugin/MCP connection, check:
 
 1. `connection_status`: the expected release version, saved configuration, successful live Freesound request, and working cache.
-2. MCP discovery still has exactly `search_sounds`, `get_sound`, `get_preview`, and `connection_status`, with no UI resources. Check changed descriptions/schemas are discoverable when this release changes them.
-3. A real CC0 search and a preview resolved by sound ID. Retrieve the preview separately without credentials; do not treat a login page as audio.
+2. MCP discovery still has exactly `search_sounds`, `get_sound`, `get_preview`, `get_audio`, and `connection_status`, with no UI resources. Check changed descriptions/schemas are discoverable when this release changes them.
+3. A real CC0 search and a preview resolved by sound ID. Call `get_audio`, retain its complete MCP result, decode the native audio block, and verify the audio bytes and provenance. Check the client actually receives audio content; do not treat a URL, transcript, login page, local simulation, or successful deployment as proof of binary delivery in that host. See [audio delivery](docs/AUDIO.md).
 4. Anonymous data-tool requests are rejected, and the recorded private audience and plugin ID are unchanged.
 5. The previous cached sound is still a cache hit with the same `stored_at`, if its one-hour lifetime has not elapsed and it has not been evicted. Expiration is not evidence of database loss. A repeated exact search should also be a cache hit.
 6. If the release changes branding, inspect the Site's actual thumbnail in Sites settings. A successful deployment alone does not prove the thumbnail changed.
 
 If tool discovery is stale, refresh it through the current supported host workflow. Only when necessary, give the user their exact existing plugin link and the current **Manage → Refresh tools** action if available. If disconnected, direct them to **Connect** on that same plugin and let them finish account authorization. Do not request reinstallation or a new Freesound key for routine updates. Client synchronization and custom UI support are separate matters.
 
-If this agent cannot access the authenticated tool connection, complete deployment and say which live checks remain unverified. Give one concrete continuation: open a fresh supported chat with the existing connector selected and ask, **"Check my Freesound Connector version and connection, search for CC0 open hi hats, and resolve one preview."** Never fabricate successful live checks, forge identity headers, or use a service bypass token to substitute for user authorization.
+If this agent cannot access the authenticated tool connection, complete deployment and say which live checks remain unverified. Give one concrete continuation: open a fresh supported chat with the existing connector selected and ask, **"Check my Freesound Connector version and connection, search for CC0 open hi hats, and fetch one preview with get_audio."** Never fabricate successful live checks, forge identity headers, or use a service bypass token to substitute for user authorization.
 
 ## 7. Record the result and recovery path
 

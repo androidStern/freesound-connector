@@ -1,7 +1,7 @@
 // Supply an MCP SDK Client that is ALREADY connected through Sites OAuth.
 // The Freesound key belongs only to the hosted Site's secret store.
 import type { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { createLibraryClient } from '../lib/sample-adapter';
+import { createLibraryClient, readAudioToolResult } from '../lib/sample-adapter';
 
 export async function retrieveSample(mcp: Client, query = 'snare') {
   const library = createLibraryClient({
@@ -14,8 +14,10 @@ export async function retrieveSample(mcp: Client, query = 'snare') {
   const page = await library.search({ query, license: 'cc0', page_size: 12 });
   const sound = page.results[0];
   if (!sound) return undefined;
-  const provenance = await library.preview(sound.id);
-  const audio = await library.fetchAudio(provenance);
+  // Keep the WHOLE MCP result: structuredContent alone omits the audio bytes.
+  const result = readAudioToolResult(await mcp.callTool({ name: 'get_audio', arguments: { sound_id: sound.id } }));
+  if (!result.ok) throw new Error(result.error.message);
+  const { audio, provenance } = result.value;
   // Browser prototype: decode with its own AudioContext after a user gesture,
   // then replace the instrument buffer only after decoding succeeds.
   // Tool-only clients can save/process these bytes without browser globals.

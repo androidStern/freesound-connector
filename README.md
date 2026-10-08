@@ -2,7 +2,7 @@
 
 ![Freesound Connector by Song Machines](public/screenshot.jpeg)
 
-A personal, hosted Freesound MCP. Search sounds, retrieve metadata and resolve preview audio from your assistants. Each person deploys their own private ChatGPT Site, stores their own Freesound key once, and installs that Site's private plugin. No sample browser, sequencer, dashboard, MCP App, or other custom UI is included.
+A personal, hosted Freesound MCP. Search sounds, retrieve metadata and fetch actual preview audio from your assistants. Each person deploys their own private ChatGPT Site, stores their own Freesound key once, and installs that Site's private plugin. No sample browser, sequencer, dashboard, MCP App, or other custom UI is included.
 
 ## Give this to your agent
 
@@ -84,13 +84,13 @@ For an existing installation being updated, use its **Manage → Refresh tools**
 
 ### 5. Verify and hand over
 
-After connection, refresh available tool discovery and run `connection_status`, a CC0 search, `get_sound`, and `get_preview` through the actual deployed connection. A successful status has `configured`, `live_request_succeeded`, and `cache_ready` all true. Repeat the exact search and verify `cache.hit: true` with unchanged `stored_at`. Validate a preview by fetching its CDN URL without any credential. No original-file download is implied.
+After connection, refresh available tool discovery and run `connection_status`, a CC0 search, `get_sound`, `get_preview`, and `get_audio` through the actual deployed connection. A successful status has `configured`, `live_request_succeeded`, and `cache_ready` all true. Repeat the exact search and verify `cache.hit: true` with unchanged `stored_at`. Validate the complete `get_audio` result: decode its native audio block and verify the bytes and provenance, rather than fetching its URL. Record when a host does not expose native audio content. No original-file download is implied.
 
-Check anonymous deployed tool calls are rejected. Verify initialization lists exactly four tools and no UI capabilities/resources. Test cache persistence after a same-version redeploy when supported. No generated token, forged identity header, public-sharing change, or service bypass may be used to make this pass. Local tests are separately labeled.
+Check anonymous deployed tool calls are rejected. Verify initialization lists exactly five tools and no UI capabilities/resources. Test cache persistence after a same-version redeploy when supported. No generated token, forged identity header, public-sharing change, or service bypass may be used to make this pass. Local tests are separately labeled.
 
-If their connected tool is not available in the current agent runtime, do not claim success. Give this prompt for a fresh supported chat with the connector selected: **“Check my Freesound connection, search for CC0 open hi hats, and resolve one preview.”** Record exactly which live verification remains unperformed.
+If their connected tool is not available in the current agent runtime, do not claim success. Give this prompt for a fresh supported chat with the connector selected: **“Check my Freesound connection, search for CC0 open hi hats, and fetch one preview with get_audio.”** Record exactly which live verification remains unperformed.
 
-Create a private, secret-free `RETURN-HANDOFF.md` for their instance with real Site/MCP/plugin/settings links, project/plugin IDs, installed version, upstream release tag and resolved commit, deployed saved-version ID, the four tools, one actual sound result, successful checks and unresolved client limitations. Include the short update prompt and canonical update-guide URL. Keep it out of the distributable template. Finish with their installation link and a useful first prompt, not a long developer checklist. Do not promise automatic installation synchronization to every client.
+Create a private, secret-free `RETURN-HANDOFF.md` for their instance with real Site/MCP/plugin/settings links, project/plugin IDs, installed version, upstream release tag and resolved commit, deployed saved-version ID, the five tools, one actual sound result, successful checks and unresolved client limitations. Include the short update prompt and canonical update-guide URL. Keep it out of the distributable template. Finish with their installation link and a useful first prompt, not a long developer checklist. Do not promise automatic installation synchronization to every client.
 
 ## Tools
 
@@ -99,9 +99,10 @@ Create a private, secret-free `RETURN-HANDOFF.md` for their instance with real S
 | `search_sounds` | `{"query":"open hi hat","page":1,"page_size":12,"license":"cc0","max_duration":4}` | Count, next/previous page, real sound metadata and cache timestamps |
 | `get_sound` | `{"sound_id":317096}` | ID, name, creator, duration, tags, source URL, exact license, attribution, available previews and waveforms |
 | `get_preview` | `{"sound_id":317096,"quality":"hq","format":"mp3"}` | Typed compressed preview descriptor, CDN URL and provenance |
+| `get_audio` | `{"sound_id":317096,"quality":"hq","format":"mp3"}` | Actual preview bytes in an MCP audio content block, plus structured provenance and byte length |
 | `connection_status` | `{}` | Configuration, live provider success, timestamp, D1 readiness, installed release, update-guide URL, redacted errors |
 
-Search supports relevance (`sort: "score"`), duration, date, downloads and rating sorting. Page size defaults to 12, maximum 40. Licenses are `cc0` (default), `attribution`, `attribution-noncommercial`, or `all`; broaden only when explicitly requested. Optional duration bounds are seconds. Search, metadata and preview tools accept `refresh: true` for an explicitly fresh request.
+Search supports relevance (`sort: "score"`), duration, date, downloads and rating sorting. Page size defaults to 12, maximum 40. Licenses are `cc0` (default), `attribution`, `attribution-noncommercial`, or `all`; broaden only when explicitly requested. Optional duration bounds are seconds. Search, metadata, preview and audio tools accept `refresh: true` for an explicitly fresh request.
 
 Example provenance: sound **317096**, **hat open2.wav** by **shpira**, duration **1.00002 s**, source https://freesound.org/people/shpira/sounds/317096/, exact license http://creativecommons.org/publicdomain/zero/1.0/. Its HQ MP3 is a compressed preview, not the original WAV. Resolve by ID again when needed; do not persist a media URL as the only identifier.
 
@@ -111,7 +112,9 @@ The private Site hosts Streamable HTTP at `/mcp`. Sites OAuth controls client ac
 
 Sites D1 stores validated metadata only: search pages for 15 minutes, sound metadata for one hour. Search results populate the per-sound cache, avoiding another API request to resolve those previews. The exact search parameters form the page key. The cache is bounded to 512 entries, at most 1 MiB each; expired entries are never served and are cleaned on subsequent writes. It persists across Worker restarts and ordinary redeploys. Simultaneous first-time misses can still make multiple provider requests; this is not a distributed request scheduler. Storage failures are explicit, rather than silently bypassing the cache and spending quota.
 
-Audio goes directly from Freesound's approved CDN to the consuming client. There is no audio proxy, R2 mirror, custom UI, or MCP Apps resource. `lib/sample-adapter.ts` and `examples/tool-client.mts` show credential-free use by an already-authorized MCP client. A future prototype supplies its own UI and authorized tool transport.
+`get_audio` fetches the selected preview on the server and returns actual bytes in a native MCP audio content block. Its structured result contains provenance, including the source preview URL; the consuming client uses the bytes, not that URL. Audio bytes are not cached. There is no application audio file-size cap. Downloads are asynchronous; standard MCP returns one complete audio result, rather than progressively playable chunks. Base64 adds roughly one third to the transferred size, and clients/platforms may impose their own limits.
+
+`get_preview` remains available for clients that prefer direct CDN delivery. `lib/sample-adapter.ts` and `examples/tool-client.mts` show how an already-authorized client consumes `get_audio` without fetching any external audio URL. A future prototype supplies its own UI and authorized tool transport. The host must expose the native audio result to that prototype; adding this tool does not give arbitrary HTML a tool bridge or prove ChatGPT Intelligent UI compatibility. See [audio delivery and streaming](docs/AUDIO.md).
 
 ## Development
 
