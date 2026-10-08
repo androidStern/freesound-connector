@@ -44,4 +44,8 @@ export type Preview = z.infer<typeof previewSchema>;
 export const failureSchema = z.object({ code: z.enum(["cache_unavailable", "unconfigured", "unauthorized", "forbidden", "not_found", "rate_limited", "upstream", "timeout", "invalid_response", "unavailable_preview", "oversized", "invalid_input"]), message: z.string(), status: z.number().int(), retry_after_seconds: z.number().nonnegative().optional() });
 export type Failure = z.infer<typeof failureSchema>;
 export type Result<T> = { ok: true; value: T } | { ok: false; error: Failure };
-export const statusSchema = z.object({ cache_ready: z.boolean(), cache_failure: failureSchema.nullable(), configured: z.boolean(), live_request_succeeded: z.boolean(), checked_at: z.string(), failure: failureSchema.nullable() });
+export const statusSchema = z.object({
+  cache_ready: z.boolean(), cache_failure: failureSchema.nullable(), configured: z.boolean(),
+  live_request_succeeded: z.boolean(), checked_at: z.string(), failure: failureSchema.nullable(),
+  release: z.object({ version: z.string(), repository_url: z.string().url(), releases_url: z.string().url(), update_instructions_url: z.string().url() }),
+});

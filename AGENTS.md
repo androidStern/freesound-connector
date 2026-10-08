@@ -1,9 +1,13 @@
 # Freesound Connector by Song Machines
 
-Read README.md in full before deployment. Its numbered agent setup is the user onboarding contract.
+Read README.md in full before deployment. Its numbered agent setup is the user onboarding contract. An update or upgrade request (including "update my Freesound Connector" or "update my free sound connector") follows UPDATING.md, not new-install onboarding.
 
 - This is a tools-only connector. Do not add a website dashboard, sample browser, sequencer, widget, render tool, custom credential-entry form or MCP Apps resource.
 - Deploy with native Sites tools and the supported starter. The clean template omits project_id; create one private instance only. Reuse the user's existing ID on retries and updates. Never deploy to a template author's project.
+- For installs and updates, use a published stable release's exact tag/commit unless the user explicitly requests development code. Record the installed upstream version in the private handoff. Do not assume main is a released version.
+- For updates, locate and open the existing Site before editing. Preserve its project/plugin identity, hosted secret, private access, binding names, applied migrations and user changes. Missing local files do not authorize creating a replacement. Do not overwrite the instance's .openai/hosting.json with the template copy.
+- Reuse the generated plugin and verify through its real authenticated connection after deployment. Do not ask for a new key or repeat installation when the existing connection works. No automatic updater or background release check runs inside this connector.
+- Keep public/screenshot.jpeg as the deployment thumbnail. Branding assets are allowed; they do not add an app UI. Do not assume the Site thumbnail also changes the plugin listing icon.
 - Do the installation, testing, database migration, building and deployment work for the user. Browser automation is optional and must not be a prerequisite.
 - Guide one user action at a time. Supply the exact Freesound credentials URL, form field values including their real Site URL, Sites settings link/fallback, and their real generated plugin installation link/card.
 - The user creates their Freesound credential and pastes Client secret/Api key into Sites' FREESOUND_API_KEY secret. Never request the key in chat, a screenshot or an attachment. Client ID is unused. Do not ask for a second secret.
