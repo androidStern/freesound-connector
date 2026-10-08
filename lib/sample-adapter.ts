@@ -38,11 +38,18 @@ export function readAudioToolResult(value: unknown): Result<{ readonly audio: Ar
     return invalid("The audio tool returned an error.");
   }
   const provenance = audioDescriptorSchema.safeParse(parsed.data.structuredContent);
-  const blocks = parsed.data.content.filter(content => content.type === "audio");
+  const blocks: Array<{ readonly data: string; readonly mimeType: string | undefined; readonly uri: string | undefined }> = [];
+  for (const content of parsed.data.content) {
+    if (content.type === "resource" && "blob" in content.resource) blocks.push({ data: content.resource.blob, mimeType: content.resource.mimeType, uri: content.resource.uri });
+    // Version 2.2.0 used audio modality content; accept its existing wire format too.
+    if (content.type === "audio") blocks.push({ data: content.data, mimeType: content.mimeType, uri: undefined });
+  }
   const block = blocks[0];
   if (!provenance.success || blocks.length !== 1 || !block || block.mimeType !== provenance.data.mime_type) {
-    return invalid("The host did not deliver one native audio block with matching provenance.");
+    return invalid("The host did not deliver one audio file with matching provenance.");
   }
+  const expectedUri = `freesound-preview://${provenance.data.sound_id}/${provenance.data.quality}.${provenance.data.format}`;
+  if (block.uri !== undefined && block.uri !== expectedUri) return invalid("The audio file identifies a different preview.");
   try {
     const binary = atob(block.data);
     if (binary.length !== provenance.data.byte_length) return invalid("The audio result is incomplete.");

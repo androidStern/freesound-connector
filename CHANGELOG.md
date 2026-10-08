@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.1 — 2026-10-08
+
+- Fixed audio retrieval for clients that strip native audio-input blocks. `get_audio` now returns an embedded MCP binary resource with an audio MIME type; the actual bytes are in `content[].resource.blob`, separate from ordinary text and structured provenance.
+- The client decoder accepts the new file result and the 2.2.0 audio result. Tool arguments and structured provenance are unchanged. No new setup, permissions, storage, UI, or file-size cap.
+
 ## 2.2.0 — 2026-10-08
 
 - Added `get_audio`: fetches a sound preview server-side and returns a native MCP audio block with exact provenance and byte length. No extra Freesound key, public media endpoint, or UI.

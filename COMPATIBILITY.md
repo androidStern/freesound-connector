@@ -1,6 +1,6 @@
 # Verification and compatibility
 
-Freesound Connector by Song Machines 2.2.0 supplies data tools only. The bundled Site thumbnail is a static branding asset. It has no custom UI, render tool, sample browser, sequencer or MCP Apps resource.
+Freesound Connector by Song Machines 2.2.1 supplies data tools only. The bundled Site thumbnail is a static branding asset. It has no custom UI, render tool, sample browser, sequencer or MCP Apps resource.
 
 | Surface | Tools | Verification |
 | --- | --- | --- |
@@ -26,3 +26,5 @@ Deploying agents must record their actual live connection checks, preview retrie
 2.2.0 adds `get_audio` as native MCP audio content with separate structured provenance. Tests verify exact byte transfer through the official SDK and HTTP handler, an audio download larger than the former 12 MiB cap, concurrent tool calls while an audio download is pending, no key on CDN requests, redirects/login HTML rejection, HTTP errors, Retry-After, cancellation, and anonymous-access rejection. Audio bytes are not cached.
 
 A local HTTP MCP round trip on 2026-10-08 fetched real sound 317096 from the live Freesound CDN using metadata obtained through the installed authenticated connector. It returned 20,349 MP3 bytes (SHA-256 `6503048f340fb4ea2d00f51d63e7fc513583b3f9a74f6081d80770db52d90be7`), no ordinary text blocks, and the exact provenance. FFmpeg decoded it successfully: 44.1 kHz stereo, approximately one second. This proves the implementation and live CDN transfer; it does not prove the ChatGPT mobile Intelligent UI bridge exposes native audio to generated widgets.
+
+A fresh installed Codex task verified that the 2.2.0 native `type: "audio"` payload is replaced with “audio content omitted because you do not support audio input.” Only its provenance reached that agent. Version 2.2.1 changes the tool result to an embedded binary resource (`content[].resource.blob`) with the correct audio MIME type; the client decoder handles both wire formats. Consult the release notes and private instance handoff for subsequent hosted delivery checks. ChatGPT mobile Intelligent UI still requires its own playback test.

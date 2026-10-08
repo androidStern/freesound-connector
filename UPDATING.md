@@ -57,7 +57,7 @@ Through the existing authenticated plugin/MCP connection, check:
 
 1. `connection_status`: the expected release version, saved configuration, successful live Freesound request, and working cache.
 2. MCP discovery still has exactly `search_sounds`, `get_sound`, `get_preview`, `get_audio`, and `connection_status`, with no UI resources. Check changed descriptions/schemas are discoverable when this release changes them.
-3. A real CC0 search and a preview resolved by sound ID. Call `get_audio`, retain its complete MCP result, decode the native audio block, and verify the audio bytes and provenance. Check the client actually receives audio content; do not treat a URL, transcript, login page, local simulation, or successful deployment as proof of binary delivery in that host. See [audio delivery](docs/AUDIO.md).
+3. A real CC0 search and a preview resolved by sound ID. Call `get_audio`, retain its complete MCP result, decode the embedded audio file, and verify the audio bytes and provenance. Check the client actually receives audio content; do not treat a URL, transcript, login page, local simulation, or successful deployment as proof of binary delivery in that host. See [audio delivery](docs/AUDIO.md).
 4. Anonymous data-tool requests are rejected, and the recorded private audience and plugin ID are unchanged.
 5. The previous cached sound is still a cache hit with the same `stored_at`, if its one-hour lifetime has not elapsed and it has not been evicted. Expiration is not evidence of database loss. A repeated exact search should also be a cache hit.
 6. If the release changes branding, inspect the Site's actual thumbnail in Sites settings. A successful deployment alone does not prove the thumbnail changed.

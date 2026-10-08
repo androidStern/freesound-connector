@@ -6,7 +6,7 @@ The result has two parts:
 
 ```json
 {
-  "content": [{ "type": "audio", "mimeType": "audio/mpeg", "data": "<base64 audio bytes>" }],
+  "content": [{ "type": "resource", "resource": { "uri": "freesound-preview://317096/hq.mp3", "mimeType": "audio/mpeg", "blob": "<base64 audio bytes>" } }],
   "structuredContent": {
     "delivery": "mcp-audio",
     "sound_id": 317096,
@@ -18,9 +18,13 @@ The result has two parts:
 
 This shortened example omits the remaining structured fields: name, creator, duration, exact license, attribution, source page, source preview URL, format, quality, expiry and metadata-cache timestamps. Sound 317096 is **hat open2.wav** by **shpira**, licensed **CC0**, source https://freesound.org/people/shpira/sounds/317096/. The returned MP3 is a compressed preview, despite the sound's original filename.
 
-Preserve the **entire** MCP result. Passing only `structuredContent` discards the audio. `readAudioToolResult` in `lib/sample-adapter.ts` validates the result, converts the native audio block into an `ArrayBuffer`, and returns its provenance. `examples/tool-client.mts` demonstrates search → get_audio → bytes with an already-authorized MCP SDK client. It works without browser globals such as `window` or `AudioContext`.
+The embedded file contains the complete bytes in `content[].resource.blob`. Its `freesound-preview://` URI is an identifier; clients do not fetch it. The descriptor's `delivery: "mcp-audio"` means audio delivered inside the MCP result.
 
-For a browser instrument, call `AudioContext.resume()` from a user gesture, then `decodeAudioData(audio.slice(0))`. Replace the current buffer only after decoding succeeds. Preserve the sound ID and provenance in project state. This project does not bundle an instrument or UI. If the host does not expose the native audio block to its widget, report that limitation; do not silently fall back to a CSP-blocked URL or paste base64 into chat text.
+Version 2.2.0 used `type: "audio"`. A real installed Codex test found that Codex removed that block when the model lacked audio-input support. Version 2.2.1 uses the standard [embedded binary resource](https://modelcontextprotocol.io/specification/2026-07-28/server/tools#embedded-resources) format instead, so clients can process the file without asking the model to hear it. The reusable decoder accepts both versions.
+
+Preserve the **entire** MCP result. Passing only `structuredContent` discards the audio. `readAudioToolResult` in `lib/sample-adapter.ts` validates the result, converts the embedded audio file into an `ArrayBuffer`, and returns its provenance. `examples/tool-client.mts` demonstrates search → get_audio → bytes with an already-authorized MCP SDK client. It works without browser globals such as `window` or `AudioContext`.
+
+For a browser instrument, call `AudioContext.resume()` from a user gesture, then `decodeAudioData(audio.slice(0))`. Replace the current buffer only after decoding succeeds. Preserve the sound ID and provenance in project state. This project does not bundle an instrument or UI. If the host does not expose the embedded audio file to its widget, report that limitation; do not silently fall back to a CSP-blocked URL or paste base64 into chat text.
 
 ## What streaming means here
 

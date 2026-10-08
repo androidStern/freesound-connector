@@ -41,7 +41,7 @@ export const previewSchema = z.object({
   license: soundSchema.shape.license, attribution: z.string(), expires_at: z.string().nullable(), delivery: z.literal("direct-cdn"),
 });
 export type Preview = z.infer<typeof previewSchema>;
-/** Provenance accompanying the native MCP audio block; cache describes metadata only. */
+/** Provenance accompanying the embedded MCP audio file; cache describes metadata only. */
 export const audioDescriptorSchema = previewSchema.extend({ delivery: z.literal("mcp-audio"), byte_length: z.number().int().positive() });
 export type AudioDescriptor = z.infer<typeof audioDescriptorSchema>;
 export const failureSchema = z.object({ code: z.enum(["cache_unavailable", "unconfigured", "unauthorized", "forbidden", "not_found", "rate_limited", "upstream", "timeout", "cancelled", "invalid_response", "unavailable_preview", "oversized", "invalid_input"]), message: z.string(), status: z.number().int(), retry_after_seconds: z.number().nonnegative().optional() });

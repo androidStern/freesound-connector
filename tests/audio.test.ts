@@ -93,7 +93,7 @@ async function connectedClient(runtime: ProviderRuntime) {
   return client;
 }
 
-test("Streamable HTTP transfers native audio and provenance without base64 in text or structured content", async () => {
+test("Streamable HTTP transfers an embedded audio file and provenance without base64 in text or structured content", async () => {
   const p = provider(() => new Response(smallAudio, { headers: { "Content-Type": "audio/mpeg" } }));
   const client = await connectedClient(p.runtime);
   try {
@@ -103,11 +103,13 @@ test("Streamable HTTP transfers native audio and provenance without base64 in te
     if (!decoded.ok) return;
     expect(new Uint8Array(decoded.value.audio)).toEqual(smallAudio);
     expect(decoded.value.provenance).toMatchObject({ delivery: "mcp-audio", byte_length: smallAudio.length, sound_id: sound.id, license: { exact: sound.license } });
-    expect(result.content).toEqual([{ type: "audio", mimeType: "audio/mpeg", data: Buffer.from(smallAudio).toString("base64") }]);
+    expect(result.content).toEqual([{ type: "resource", resource: { uri: "freesound-preview://317096/hq.mp3", mimeType: "audio/mpeg", blob: Buffer.from(smallAudio).toString("base64") } }]);
     expect(JSON.stringify(result.structuredContent)).not.toContain(Buffer.from(smallAudio).toString("base64"));
     expect(await client.callTool({ name: "get_audio", arguments: { sound_id: -1 } })).toMatchObject({ isError: true });
     expect(await client.callTool({ name: "get_audio", arguments: { sound_id: sound.id, url: "https://evil.example" } })).toMatchObject({ isError: true });
     expect(readAudioToolResult({ ...result, content: [] })).toMatchObject({ error: { code: "invalid_response" } });
+    expect(readAudioToolResult({ ...result, content: [{ type: "audio", mimeType: "audio/mpeg", data: Buffer.from(smallAudio).toString("base64") }] }).ok).toBe(true);
+    expect(readAudioToolResult({ ...result, content: [{ type: "resource", resource: { uri: "freesound-preview://1/hq.mp3", mimeType: "audio/mpeg", blob: Buffer.from(smallAudio).toString("base64") } }] })).toMatchObject({ error: { code: "invalid_response" } });
   } finally { await client.close(); }
 });
 
